@@ -20,6 +20,7 @@ import {
   Volume2
 } from 'lucide-react';
 import { speakText } from '../lib/tts';
+import { getTranslation, Language } from '../lib/i18n';
 
 interface Props {
   logs: ExerciseLog[];
@@ -36,7 +37,9 @@ export const DoctorReportView: React.FC<Props> = ({
   chatMessages,
   settings,
 }) => {
-  const { highContrast, ttsEnabled, patientName, patientAge } = settings;
+  const { highContrast, ttsEnabled, patientName, patientAge, language = 'es' } = settings;
+  const t = getTranslation((language || 'es') as Language);
+
   const [reportMarkdown, setReportMarkdown] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [copied, setCopied] = useState<boolean>(false);
@@ -50,7 +53,6 @@ export const DoctorReportView: React.FC<Props> = ({
   // Generate Report from Backend API
   const generateReport = async () => {
     setIsGenerating(true);
-    speakText('Generando reporte clínico actualizado con Inteligencia Artificial. Por favor espera unos segundos.', ttsEnabled, settings.language || 'es');
 
     try {
       const res = await fetch('/api/report', {
@@ -59,7 +61,7 @@ export const DoctorReportView: React.FC<Props> = ({
         body: JSON.stringify({
           patientName,
           patientAge,
-          language: settings.language || 'es',
+          language: language || 'es',
           exerciseLogs: logs.slice(0, 10),
           schedule,
           testResults,
@@ -70,13 +72,12 @@ export const DoctorReportView: React.FC<Props> = ({
       const data = await res.json();
       if (data.report) {
         setReportMarkdown(data.report);
-        speakText('Reporte clínico generado exitosamente. Listo para enviar a tu médico o terapeuta.', ttsEnabled, settings.language || 'es');
       } else {
-        setReportMarkdown('Error al obtener la respuesta del servidor.');
+        setReportMarkdown('Error');
       }
     } catch (e: any) {
       console.error(e);
-      setReportMarkdown('No se pudo conectar con el servicio de IA para generar el reporte. Revisa tu conexión.');
+      setReportMarkdown('Error');
     } finally {
       setIsGenerating(false);
     }
@@ -84,13 +85,13 @@ export const DoctorReportView: React.FC<Props> = ({
 
   useEffect(() => {
     generateReport();
-  }, []);
+  }, [language]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(reportMarkdown);
     setCopied(true);
     setTimeout(() => setCopied(false), 3000);
-    speakText('Reporte copiado al portapapeles.', ttsEnabled, settings.language || 'es');
+    speakText(t.reportView.copiedBtn, ttsEnabled, language);
   };
 
   const handlePrint = () => {
@@ -99,9 +100,9 @@ export const DoctorReportView: React.FC<Props> = ({
 
   const handleWhatsAppShare = () => {
     const text = encodeURIComponent(
-      `*Reporte Clínico de Terapia Ocupacional para ${patientName}*\n\n` +
-      `*Adherencia:* ${complianceRate}%\n` +
-      `*Evaluación Cognitiva:* ${latestTest ? latestTest.totalScore + '/30 (' + latestTest.severityLabel + ')' : 'N/A'}\n\n` +
+      `*${t.reportView.docTitle}: ${patientName}*\n\n` +
+      `*${t.reportView.adherence}:* ${complianceRate}%\n` +
+      `*${t.reportView.cognitiveTest}:* ${latestTest ? latestTest.totalScore + '/30' : t.reportView.noTest}\n\n` +
       reportMarkdown.slice(0, 1000) + '...'
     );
     window.open(`https://wa.me/?text=${text}`, '_blank');
@@ -120,9 +121,9 @@ export const DoctorReportView: React.FC<Props> = ({
             <Stethoscope size={40} />
           </div>
           <div>
-            <h2 className="text-3xl font-black">Reporte para el Médico / Terapeuta</h2>
+            <h2 className="text-3xl font-black">{t.reportView.title}</h2>
             <p className="text-lg font-bold opacity-80">
-              Resumen clínico exportable sobre movilidad, dolor, test de demencia y actividades.
+              {t.reportView.subtitle}
             </p>
           </div>
         </div>
@@ -137,7 +138,7 @@ export const DoctorReportView: React.FC<Props> = ({
           }`}
         >
           <RefreshCw size={24} className={isGenerating ? 'animate-spin' : ''} />
-          <span>{isGenerating ? 'Generando...' : 'Actualizar Reporte'}</span>
+          <span>{isGenerating ? t.reportView.generating : t.reportView.updateBtn}</span>
         </button>
       </div>
 
@@ -146,27 +147,27 @@ export const DoctorReportView: React.FC<Props> = ({
         <div className={`p-5 rounded-2xl border-4 text-center ${
           highContrast ? 'bg-zinc-900 border-yellow-400' : 'bg-white border-slate-300'
         }`}>
-          <p className="text-sm font-bold uppercase opacity-70">Paciente</p>
+          <p className="text-sm font-bold uppercase opacity-70">{t.reportView.patient}</p>
           <h3 className="text-2xl font-black">{patientName}</h3>
-          <p className="text-base font-bold text-rose-600 dark:text-yellow-400">{patientAge} años</p>
+          <p className="text-base font-bold text-rose-600 dark:text-yellow-400">{patientAge} {t.reportView.years}</p>
         </div>
 
         <div className={`p-5 rounded-2xl border-4 text-center ${
           highContrast ? 'bg-zinc-900 border-yellow-400' : 'bg-white border-slate-300'
         }`}>
-          <p className="text-sm font-bold uppercase opacity-70">Adherencia Diaria</p>
+          <p className="text-sm font-bold uppercase opacity-70">{t.reportView.adherence}</p>
           <h3 className="text-3xl font-black text-green-600 dark:text-green-400">{complianceRate}%</h3>
-          <p className="text-xs font-bold text-slate-500">{totalCompletedToday} de {totalScheduled} cumplidos hoy</p>
+          <p className="text-xs font-bold text-slate-500">{totalCompletedToday} / {totalScheduled} {t.reportView.completedToday}</p>
         </div>
 
         <div className={`p-5 rounded-2xl border-4 text-center ${
           highContrast ? 'bg-zinc-900 border-yellow-400' : 'bg-white border-slate-300'
         }`}>
-          <p className="text-sm font-bold uppercase opacity-70">Test Cognitivo MMSE</p>
+          <p className="text-sm font-bold uppercase opacity-70">{t.reportView.cognitiveTest}</p>
           <h3 className="text-2xl font-black text-purple-600 dark:text-yellow-400">
-            {latestTest ? `${latestTest.totalScore}/30` : 'Pendiente'}
+            {latestTest ? `${latestTest.totalScore}/30` : '-'}
           </h3>
-          <p className="text-xs font-bold text-slate-500">{latestTest?.severityLabel || 'Sin test realizado'}</p>
+          <p className="text-xs font-bold text-slate-500">{latestTest?.severityLabel || t.reportView.noTest}</p>
         </div>
       </div>
 
@@ -176,19 +177,19 @@ export const DoctorReportView: React.FC<Props> = ({
       }`}>
         <div className="flex items-center justify-between pb-4 mb-6 border-b-2 border-slate-300 dark:border-yellow-400">
           <div>
-            <h1 className="text-3xl font-black uppercase tracking-tight">INFORME DE TERAPIA OCUPACIONAL</h1>
-            <p className="text-base font-bold opacity-75">OcuPaz Senior • Asistente Digital para Salud Funcional</p>
+            <h1 className="text-3xl font-black uppercase tracking-tight">{t.reportView.docTitle}</h1>
+            <p className="text-base font-bold opacity-75">{t.reportView.docSubTitle}</p>
           </div>
           <div className="text-right">
-            <p className="font-bold text-base">Fecha: {new Date().toLocaleDateString('es-ES')}</p>
-            <p className="text-xs font-bold opacity-70">Racha activa: {settings.currentStreak} días</p>
+            <p className="font-bold text-base">{t.reportView.date}: {new Date().toLocaleDateString(language === 'de' ? 'de-DE' : language === 'en' ? 'en-US' : 'es-ES')}</p>
+            <p className="text-xs font-bold opacity-70">{t.reportView.streak}: {settings.currentStreak}</p>
           </div>
         </div>
 
         {isGenerating ? (
           <div className="py-16 text-center space-y-4">
             <Sparkles size={48} className="text-rose-600 mx-auto animate-spin" />
-            <p className="text-2xl font-black">El asistente IA está estructurando las notas clínicas...</p>
+            <p className="text-2xl font-black">{t.reportView.generating}</p>
           </div>
         ) : (
           <div className="prose dark:prose-invert max-w-none text-xl font-medium leading-relaxed whitespace-pre-wrap">
@@ -205,7 +206,7 @@ export const DoctorReportView: React.FC<Props> = ({
             highContrast ? 'bg-yellow-400 text-black border-yellow-300' : 'bg-blue-600 text-white border-blue-800 hover:bg-blue-700'
           }`}
         >
-          <Printer size={26} /> Imprimir / Guardar PDF
+          <Printer size={26} /> {t.reportView.printBtn}
         </button>
 
         <button
@@ -217,16 +218,17 @@ export const DoctorReportView: React.FC<Props> = ({
           }`}
         >
           {copied ? <CheckCircle2 size={26} /> : <Copy size={26} />}
-          <span>{copied ? '¡Copiado!' : 'Copiar Texto'}</span>
+          <span>{copied ? t.reportView.copiedBtn : t.reportView.copyBtn}</span>
         </button>
 
         <button
           onClick={handleWhatsAppShare}
           className="px-6 py-4 rounded-2xl font-black text-xl bg-emerald-600 text-white border-4 border-emerald-800 hover:bg-emerald-700 flex items-center gap-2 shadow-xl transition active:scale-95"
         >
-          <Share2 size={26} /> Compartir por WhatsApp
+          <Share2 size={26} /> {t.reportView.shareBtn}
         </button>
       </div>
     </div>
   );
 };
+

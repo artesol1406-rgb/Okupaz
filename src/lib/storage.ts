@@ -186,18 +186,26 @@ export function saveTestResult(result: DementiaTestResult): DementiaTestResult[]
   return updated;
 }
 
-export function getStoredChat(): ChatMessage[] {
+export function getStoredChat(lang: string = 'es'): ChatMessage[] {
   try {
     const raw = localStorage.getItem(CHAT_KEY);
     if (raw) return JSON.parse(raw);
   } catch (e) {
     console.warn(e);
   }
+
+  const greeting =
+    lang === 'de'
+      ? 'Hallo! Ich bin Rita, Ihre Ergotherapie-Begleiterin. Wie fühlen sich Ihre Hände und Gelenke heute an?'
+      : lang === 'en'
+      ? 'Hello! I am Rita, your occupational therapy guide. How are your hands and joints feeling today?'
+      : '¡Hola! Soy Rita, tu guía de terapia ocupacional. ¿Cómo amanecieron hoy tus manos y tus articulaciones?';
+
   return [
     {
       id: 'chat-1',
       sender: 'assistant',
-      text: '¡Hola, Rosa María! Soy Rita, tu guía de terapia ocupacional. ¿Cómo amanecieron hoy tus manos y tus articulaciones?',
+      text: greeting,
       timestamp: '09:00 AM'
     }
   ];

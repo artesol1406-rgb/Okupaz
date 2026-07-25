@@ -27,7 +27,9 @@ import { CognitiveTestView } from './components/CognitiveTestView';
 import { AIChatView } from './components/AIChatView';
 import { DoctorReportView } from './components/DoctorReportView';
 import { OnboardingModal } from './components/OnboardingModal';
+import { FloatingVoiceController } from './components/FloatingVoiceController';
 import { speakText } from './lib/tts';
+import { getTranslation } from './lib/i18n';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'path' | 'schedule' | 'dementia' | 'chat' | 'report'>('path');
@@ -35,10 +37,25 @@ export default function App() {
   const [logs, setLogs] = useState<ExerciseLog[]>(getStoredLogs());
   const [schedule, setSchedule] = useState<ScheduleItem[]>(getStoredSchedule());
   const [testResults, setTestResults] = useState<DementiaTestResult[]>(getStoredTestResults());
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(getStoredChat());
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(() => getStoredChat(getStoredSettings().language || 'es'));
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(!settings.hasCompletedOnboarding);
+
+  // Reset / Restart App Function
+  const handleResetApp = () => {
+    const confirmMsg =
+      settings.language === 'de'
+        ? 'Möchten Sie die App wirklich neustarten und zur Sprach- und Profilauswahl zurückkehren?'
+        : settings.language === 'en'
+        ? 'Are you sure you want to restart the app and return to language and profile selection?'
+        : '¿Deseas reiniciar la aplicación y volver a la selección de idioma y perfil?';
+
+    if (window.confirm(confirmMsg)) {
+      localStorage.clear();
+      window.location.reload();
+    }
+  };
 
   // Update Settings
   const handleUpdateSettings = (newPartial: Partial<UserSettings>) => {
@@ -178,18 +195,16 @@ export default function App() {
         activeTab={activeTab}
         setActiveTab={(tab) => {
           setActiveTab(tab);
-          const labels: Record<string, string> = {
-            path: 'Ruta de ejercicios',
-            schedule: 'Agenda y horario',
-            dementia: 'Test de memoria y orientación',
-            chat: 'Chat con la Guía Rita',
-            report: 'Reporte para el médico',
-          };
-          speakText(`Pestaña: ${labels[tab]}`, settings.ttsEnabled, settings.language || 'es');
+          const lang = settings.language || 'es';
+          const t = getTranslation(lang);
+          const tabLabel = (t as any).tabAnnouncements?.[tab] || t.tabs[tab];
+          const prefix = lang === 'de' ? 'Register' : lang === 'en' ? 'Tab' : 'Pestaña';
+          speakText(`${prefix}: ${tabLabel}`, settings.ttsEnabled, lang);
         }}
         settings={settings}
         updateSettings={handleUpdateSettings}
         onOpenOnboarding={() => setIsOnboardingOpen(true)}
+        onResetApp={handleResetApp}
       />
 
       {/* Main Content Area */}
@@ -252,6 +267,7 @@ export default function App() {
         }}
         onClose={() => setIsOnboardingOpen(false)}
         isEditing={Boolean(settings.hasCompletedOnboarding)}
+        onResetApp={handleResetApp}
       />
 
       {/* Active Exercise Player Modal */}
@@ -263,6 +279,12 @@ export default function App() {
           settings={settings}
         />
       )}
+
+      {/* Floating Voice Stop Controller */}
+      <FloatingVoiceController
+        language={settings.language}
+        highContrast={settings.highContrast}
+      />
     </div>
   );
 }

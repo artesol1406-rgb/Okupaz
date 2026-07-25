@@ -45,11 +45,13 @@ export function speakText(text: string, enabled: boolean = true, lang: 'es' | 'e
     utterance.pitch = 1.0;
 
     // Pick a matching voice if available
-    const voices = window.speechSynthesis.getVoices();
-    const langPrefix = lang;
-    const matchedVoice =
-      voices.find((v) => v.lang.startsWith(langPrefix) && (v.name.includes('Google') || v.name.includes('Natural'))) ||
-      voices.find((v) => v.lang.startsWith(langPrefix));
+    let voices = window.speechSynthesis.getVoices();
+    const langPrefix = targetLang.split('-')[0].toLowerCase(); // 'es', 'en', 'de'
+    
+    let matchedVoice =
+      voices.find((v) => v.lang.replace('_', '-').toLowerCase() === targetLang.toLowerCase() && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Premium'))) ||
+      voices.find((v) => v.lang.replace('_', '-').toLowerCase().startsWith(targetLang.toLowerCase())) ||
+      voices.find((v) => v.lang.toLowerCase().startsWith(langPrefix));
 
     if (matchedVoice) {
       utterance.voice = matchedVoice;

@@ -1,13 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Exercise } from '../types';
-import { Play, Pause, RotateCcw, Volume2, Sparkles } from 'lucide-react';
-import { speakText } from '../lib/tts';
+import { Play, Pause, RotateCcw, Volume2, Sparkles, Square } from 'lucide-react';
+import { speakText, stopSpeaking } from '../lib/tts';
+import { getTranslation, Language } from '../lib/i18n';
 
 interface Props {
   exercise: Exercise;
   currentStepIndex: number;
   highContrast?: boolean;
   ttsEnabled?: boolean;
+  language?: Language;
 }
 
 export const ExerciseAnimationCanvas: React.FC<Props> = ({
@@ -15,18 +17,22 @@ export const ExerciseAnimationCanvas: React.FC<Props> = ({
   currentStepIndex,
   highContrast = false,
   ttsEnabled = true,
+  language = 'es',
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(true);
   const [progress, setProgress] = useState(0);
 
+  const safeLang = (language || 'es') as Language;
+  const t = getTranslation(safeLang);
+
   // Read step instruction aloud on step change
   useEffect(() => {
     const currentStep = exercise.steps[currentStepIndex];
     if (currentStep) {
-      speakText(`Paso ${currentStep.stepNumber}: ${currentStep.instruction}`, ttsEnabled);
+      speakText(`${t.exerciseModal.step} ${currentStep.stepNumber}: ${currentStep.instruction}`, ttsEnabled, safeLang);
     }
-  }, [currentStepIndex, exercise, ttsEnabled]);
+  }, [currentStepIndex, exercise, ttsEnabled, safeLang]);
 
   useEffect(() => {
     let animationFrameId: number;
@@ -132,7 +138,13 @@ export const ExerciseAnimationCanvas: React.FC<Props> = ({
         ctx.fillStyle = accentColor;
         ctx.font = 'bold 20px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(flexFactor > 0.5 ? '↑ ABRIR MANO ↑' : '↓ CERRAR PUÑO ↓', centerX, height - 25);
+        const labelText =
+          safeLang === 'de'
+            ? flexFactor > 0.5 ? '↑ HAND ÖFFNEN ↑' : '↓ FAUST BALLEN ↓'
+            : safeLang === 'en'
+            ? flexFactor > 0.5 ? '↑ OPEN HAND ↑' : '↓ CLOSE FIST ↓'
+            : flexFactor > 0.5 ? '↑ ABRIR MANO ↑' : '↓ CERRAR PUÑO ↓';
+        ctx.fillText(labelText, centerX, height - 25);
 
       } else if (exercise.animationType === 'finger_pinch') {
         // Pinch Finger Animation
@@ -183,7 +195,13 @@ export const ExerciseAnimationCanvas: React.FC<Props> = ({
         ctx.fillStyle = accentColor;
         ctx.font = 'bold 20px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('PINZA: TOCA YEMAS DE DEDOS', centerX, height - 25);
+        const labelText =
+          safeLang === 'de'
+            ? 'PINZETTE: FINGERKUPPEN BERÜHREN'
+            : safeLang === 'en'
+            ? 'PINCH: TOUCH FINGERTIPS'
+            : 'PINZA: TOCA YEMAS DE DEDOS';
+        ctx.fillText(labelText, centerX, height - 25);
 
       } else if (exercise.animationType === 'wrist_rotate') {
         // Wrist Rotate
@@ -226,7 +244,13 @@ export const ExerciseAnimationCanvas: React.FC<Props> = ({
         ctx.fillStyle = accentColor;
         ctx.font = 'bold 20px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('↻ ROTACIÓN DE MUÑECA ↺', centerX, height - 25);
+        const labelText =
+          safeLang === 'de'
+            ? '↻ HANDGELENK DREHUNG ↺'
+            : safeLang === 'en'
+            ? '↻ WRIST ROTATION ↺'
+            : '↻ ROTACIÓN DE MUÑECA ↺';
+        ctx.fillText(labelText, centerX, height - 25);
 
       } else {
         // General Arm / Movement Motion
@@ -261,7 +285,13 @@ export const ExerciseAnimationCanvas: React.FC<Props> = ({
         ctx.fillStyle = accentColor;
         ctx.font = 'bold 20px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('MOVIMIENTO GUIADO CONTINUO', centerX, height - 25);
+        const labelText =
+          safeLang === 'de'
+            ? 'KONTINUIERLICHE BEWEGUNG'
+            : safeLang === 'en'
+            ? 'CONTINUOUS GUIDED MOTION'
+            : 'MOVIMIENTO GUIADO CONTINUO';
+        ctx.fillText(labelText, centerX, height - 25);
       }
 
       if (isPlaying) {
@@ -274,7 +304,7 @@ export const ExerciseAnimationCanvas: React.FC<Props> = ({
     return () => {
       cancelAnimationFrame(animationFrameId);
     };
-  }, [exercise, isPlaying, highContrast]);
+  }, [exercise, isPlaying, highContrast, safeLang]);
 
   const currentStep = exercise.steps[currentStepIndex] || exercise.steps[0];
 
@@ -303,15 +333,22 @@ export const ExerciseAnimationCanvas: React.FC<Props> = ({
             {isPlaying ? <Pause size={24} /> : <Play size={24} />}
           </button>
           <button
-            onClick={() => speakText(`Paso ${currentStep.stepNumber}: ${currentStep.instruction}`, ttsEnabled)}
+            onClick={() => speakText(`${t.exerciseModal.step} ${currentStep.stepNumber}: ${currentStep.instruction}`, ttsEnabled, safeLang)}
             className={`p-3 rounded-full font-bold shadow-md flex items-center justify-center transition ${
               highContrast
                 ? 'bg-green-400 text-black hover:bg-green-300'
                 : 'bg-emerald-600 text-white hover:bg-emerald-700'
             }`}
-            title="Escuchar en voz alta"
+            title={t.exerciseModal.speakInstruction || 'Escuchar'}
           >
             <Volume2 size={24} />
+          </button>
+          <button
+            onClick={stopSpeaking}
+            className="p-3 rounded-full font-bold shadow-md flex items-center justify-center bg-rose-600 text-white hover:bg-rose-700 transition"
+            title={t.voiceControl.stop}
+          >
+            <Square size={24} className="fill-current" />
           </button>
         </div>
 
@@ -319,7 +356,7 @@ export const ExerciseAnimationCanvas: React.FC<Props> = ({
         <div className={`absolute bottom-3 left-3 px-3 py-1.5 rounded-lg text-sm font-black uppercase tracking-wider ${
           highContrast ? 'bg-yellow-400 text-black' : 'bg-blue-600 text-white'
         }`}>
-          Paso {currentStepIndex + 1} de {exercise.steps.length}
+          {t.exerciseModal.step} {currentStepIndex + 1} {t.exerciseModal.of} {exercise.steps.length}
         </div>
       </div>
 
@@ -332,7 +369,7 @@ export const ExerciseAnimationCanvas: React.FC<Props> = ({
         </p>
         <p className={`text-base md:text-lg font-medium flex items-center justify-center gap-1.5 ${highContrast ? 'text-zinc-300' : 'text-slate-600'}`}>
           <Sparkles size={18} className="text-amber-500" />
-          Guía visual: <span className="font-bold underline">{currentStep.visualHint}</span>
+          <span>{language === 'de' ? 'Visuelle Anleitung' : language === 'en' ? 'Visual guide' : 'Guía visual'}:</span> <span className="font-bold underline">{currentStep.visualHint}</span>
         </p>
       </div>
     </div>

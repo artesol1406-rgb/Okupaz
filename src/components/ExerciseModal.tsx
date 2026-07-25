@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Exercise, ExerciseLog, UserSettings } from '../types';
 import { ExerciseAnimationCanvas } from './ExerciseAnimationCanvas';
 import { getTranslation } from '../lib/i18n';
+import { getExercisesData } from '../data/exercisesData';
 import {
   X,
   ChevronLeft,
@@ -13,7 +14,9 @@ import {
   Smile,
   Meh,
   Frown,
-  AlertCircle
+  AlertCircle,
+  Play,
+  Pause
 } from 'lucide-react';
 import { speakText } from '../lib/tts';
 
@@ -33,17 +36,20 @@ export const ExerciseModal: React.FC<Props> = ({
   const { highContrast, ttsEnabled, language = 'es' } = settings;
   const t = getTranslation(language);
 
+  // Retrieve localized exercise based on current language setting
+  const localizedExercise = getExercisesData(language).find((e) => e.id === exercise.id) || exercise;
+
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
-  const [timerSeconds, setTimerSeconds] = useState(exercise.durationSeconds);
+  const [timerSeconds, setTimerSeconds] = useState(localizedExercise.durationSeconds);
   const [timerActive, setTimerActive] = useState(false);
   const [showPainSurvey, setShowPainSurvey] = useState(false);
   const [selectedPainLevel, setSelectedPainLevel] = useState<0 | 1 | 2 | 3>(0);
   const [notesText, setNotesText] = useState('');
 
-  // Read exercise overview on open
+  // Read exercise overview on open in selected language
   useEffect(() => {
-    speakText(`${exercise.title}. ${exercise.description}`, ttsEnabled, language);
-  }, [exercise, ttsEnabled, language]);
+    speakText(`${localizedExercise.title}. ${localizedExercise.description}`, ttsEnabled, language);
+  }, [localizedExercise, ttsEnabled, language]);
 
   // Timer Countdown
   useEffect(() => {
@@ -54,13 +60,19 @@ export const ExerciseModal: React.FC<Props> = ({
       }, 1000);
     } else if (timerSeconds === 0 && timerActive) {
       setTimerActive(false);
-      speakText(`${t.exerciseModal.completedTitle}`, ttsEnabled, language);
+      const promptText = (t.exerciseModal as any).timerFinishedPrompt ||
+        (language === 'de'
+          ? 'Zeit abgelaufen! Bitte gehen Sie zum nächsten Schritt.'
+          : language === 'en'
+          ? 'Time is up! Please move to the next step.'
+          : '¡Tiempo completado! Pasa al siguiente paso.');
+      speakText(`${t.exerciseModal.completedTitle}. ${promptText}`, ttsEnabled, language);
     }
     return () => clearInterval(interval);
   }, [timerActive, timerSeconds, ttsEnabled, language, t.exerciseModal.completedTitle]);
 
   const handleNextStep = () => {
-    if (currentStepIndex < exercise.steps.length - 1) {
+    if (currentStepIndex < localizedExercise.steps.length - 1) {
       setCurrentStepIndex((prev) => prev + 1);
     } else {
       // Reached last step, prompt pain survey
@@ -78,8 +90,8 @@ export const ExerciseModal: React.FC<Props> = ({
   const handleFinalSubmit = () => {
     const newLog: ExerciseLog = {
       id: `log-${Date.now()}`,
-      exerciseId: exercise.id,
-      exerciseTitle: exercise.title,
+      exerciseId: localizedExercise.id,
+      exerciseTitle: localizedExercise.title,
       date: new Date().toISOString().split('T')[0],
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       painLevel: selectedPainLevel,
@@ -118,21 +130,22 @@ export const ExerciseModal: React.FC<Props> = ({
               <span className={`inline-block px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider mb-1 ${
                 highContrast ? 'bg-yellow-400 text-black' : 'bg-blue-100 text-blue-900'
               }`}>
-                {exercise.unit}
+                {localizedExercise.unit}
               </span>
-              <h2 className="text-3xl font-black">{exercise.title}</h2>
+              <h2 className="text-3xl font-black">{localizedExercise.title}</h2>
               <p className="text-base font-bold opacity-80 mt-1">
-                {t.exerciseModal.targetZone}: {exercise.targetJoint} • {exercise.repetitions} reps
+                {t.exerciseModal.targetZone}: {localizedExercise.targetJoint} • {localizedExercise.repetitions} reps
               </p>
             </div>
 
             {/* Animation Demonstrator Canvas */}
             <div className="w-full mb-6">
               <ExerciseAnimationCanvas
-                exercise={exercise}
+                exercise={localizedExercise}
                 currentStepIndex={currentStepIndex}
                 highContrast={highContrast}
                 ttsEnabled={ttsEnabled}
+                language={language}
               />
             </div>
 
@@ -142,37 +155,46 @@ export const ExerciseModal: React.FC<Props> = ({
             }`}>
               <p className="font-bold text-base flex items-center gap-2">
                 <Sparkles size={22} className="text-amber-500 shrink-0" />
-                <span><strong className="underline">{t.exerciseModal.benefitTitle}:</strong> {exercise.benefit}</span>
+                <span><strong className="underline">{t.exerciseModal.benefitTitle}:</strong> {localizedExercise.benefit}</span>
               </p>
             </div>
 
             {/* Timer & Controls Bar */}
-            <div className="w-full flex items-center justify-between gap-3 mb-6 p-3 rounded-2xl bg-slate-100 dark:bg-zinc-900 border border-slate-300 dark:border-zinc-800">
-              <div className="flex items-center gap-2 font-black text-xl">
-                <Clock size={28} className="text-blue-600 dark:text-yellow-400" />
+            <div className={`w-full flex items-center justify-between gap-3 mb-6 p-4 rounded-3xl border-4 shadow-lg ${
+              highContrast ? 'bg-zinc-900 border-yellow-400 text-yellow-300' : 'bg-blue-50 border-blue-300 text-slate-800'
+            }`}>
+              <div className="flex items-center gap-2 font-black text-2xl md:text-3xl">
+                <Clock size={36} className={highContrast ? 'text-yellow-400' : 'text-blue-600'} />
                 <span>{timerSeconds}s</span>
               </div>
 
               <button
                 onClick={() => setTimerActive(!timerActive)}
-                className={`px-4 py-2 rounded-xl font-black text-base border-2 ${
+                className={`py-3.5 px-6 rounded-2xl font-black text-lg md:text-xl border-4 shadow-xl flex items-center gap-2.5 transition active:scale-95 ${
                   timerActive
-                    ? 'bg-rose-600 text-white border-rose-700'
-                    : highContrast ? 'bg-yellow-400 text-black border-yellow-300' : 'bg-blue-600 text-white border-blue-700'
+                    ? 'bg-rose-600 text-white border-rose-700 hover:bg-rose-700'
+                    : highContrast
+                      ? 'bg-yellow-400 text-black border-yellow-300 hover:bg-yellow-300'
+                      : 'bg-blue-600 text-white border-blue-700 hover:bg-blue-700'
                 }`}
               >
-                {timerActive ? t.exerciseModal.pauseTimer : t.exerciseModal.startTimer}
+                {timerActive ? <Pause size={28} /> : <Play size={28} />}
+                <span>{timerActive ? t.exerciseModal.pauseTimer : t.exerciseModal.startTimer}</span>
               </button>
 
               <button
                 onClick={() => {
-                  setTimerSeconds(exercise.durationSeconds);
+                  setTimerSeconds(localizedExercise.durationSeconds);
                   setTimerActive(false);
                 }}
-                className="p-2 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-200"
+                className={`p-3.5 rounded-2xl border-2 font-bold transition flex items-center justify-center ${
+                  highContrast
+                    ? 'border-yellow-400 text-yellow-300 hover:bg-zinc-800'
+                    : 'border-slate-300 text-slate-700 hover:bg-slate-200 bg-white'
+                }`}
                 title="Reset timer"
               >
-                <RotateCcw size={22} />
+                <RotateCcw size={26} />
               </button>
             </div>
 
@@ -200,7 +222,7 @@ export const ExerciseModal: React.FC<Props> = ({
                     : 'bg-green-600 text-white border-green-700 hover:bg-green-700'
                 }`}
               >
-                {currentStepIndex < exercise.steps.length - 1 ? (
+                {currentStepIndex < localizedExercise.steps.length - 1 ? (
                   <>{t.exerciseModal.nextStep} <ChevronRight size={28} /></>
                 ) : (
                   <>{t.exerciseModal.finishExercise} <CheckCircle size={28} /></>

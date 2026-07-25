@@ -13,6 +13,9 @@ import {
   FileText
 } from 'lucide-react';
 import { speakText } from '../lib/tts';
+import { getTranslation, Language } from '../lib/i18n';
+
+import { ECGLandscapeLogoIcon } from './ECGLandscapeLogoIcon';
 
 interface Props {
   messages: ChatMessage[];
@@ -29,7 +32,9 @@ export const AIChatView: React.FC<Props> = ({
   onGoToReport,
   isLoading,
 }) => {
-  const { highContrast, ttsEnabled } = settings;
+  const { highContrast, ttsEnabled, language = 'es' } = settings;
+  const t = getTranslation((language || 'es') as Language);
+
   const [inputText, setInputText] = useState('');
   const [isListening, setIsListening] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -42,7 +47,7 @@ export const AIChatView: React.FC<Props> = ({
   const handleStartListening = () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      alert('Tu navegador no soporta dictado por voz directo. Puedes escribir el texto abajo.');
+      alert('Speech dictation is not supported in this browser. Please type your message.');
       return;
     }
 
@@ -53,13 +58,12 @@ export const AIChatView: React.FC<Props> = ({
         en: 'en-US',
         de: 'de-DE',
       };
-      recognition.lang = langCodeMap[settings.language || 'es'] || 'es-ES';
+      recognition.lang = langCodeMap[language || 'es'] || 'es-ES';
       recognition.continuous = false;
       recognition.interimResults = false;
 
       recognition.onstart = () => {
         setIsListening(true);
-        speakText('Te escucho. Háblame despacio.', ttsEnabled, settings.language || 'es');
       };
 
       recognition.onresult = (event: any) => {
@@ -105,13 +109,13 @@ export const AIChatView: React.FC<Props> = ({
         highContrast ? 'bg-zinc-900 border-yellow-400' : 'bg-white border-teal-300'
       }`}>
         <div className="flex items-center gap-4">
-          <div className={`p-3 rounded-2xl ${highContrast ? 'bg-yellow-400 text-black' : 'bg-teal-600 text-white'}`}>
-            <Bot size={40} />
+          <div className="shrink-0 p-1 bg-emerald-100 dark:bg-emerald-950 rounded-2xl">
+            <ECGLandscapeLogoIcon size={52} />
           </div>
           <div>
-            <h2 className="text-3xl font-black">Guía Rita (IA Acompañante)</h2>
+            <h2 className="text-3xl font-black">{t.chatView.title}</h2>
             <p className="text-lg font-bold opacity-80">
-              Cuéntale cómo te sientes, tus dolores o progresos. Rita anotará todo para tu médico.
+              {settings.patientName ? `Atendiendo a ${settings.patientName} (${settings.patientAge} años)` : t.chatView.subtitle}
             </p>
           </div>
         </div>
@@ -122,7 +126,7 @@ export const AIChatView: React.FC<Props> = ({
             highContrast ? 'bg-yellow-400 text-black border-yellow-300' : 'bg-rose-600 text-white border-rose-700'
           }`}
         >
-          <FileText size={24} /> Ver Reporte Generado
+          <FileText size={24} /> {t.chatView.reportBtn}
         </button>
       </div>
 
@@ -138,12 +142,12 @@ export const AIChatView: React.FC<Props> = ({
               className={`flex items-start gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}
             >
               {/* Avatar Icon */}
-              <div className={`p-2.5 rounded-full shrink-0 ${
+              <div className={`p-1.5 rounded-full shrink-0 flex items-center justify-center ${
                 isUser
-                  ? 'bg-blue-600 text-white'
+                  ? 'bg-blue-600 text-white p-2.5'
                   : highContrast ? 'bg-yellow-400 text-black' : 'bg-teal-600 text-white'
               }`}>
-                {isUser ? <User size={24} /> : <Bot size={24} />}
+                {isUser ? <User size={24} /> : <ECGLandscapeLogoIcon size={32} />}
               </div>
 
               {/* Message Bubble */}
@@ -163,9 +167,9 @@ export const AIChatView: React.FC<Props> = ({
                   <span className="text-xs font-bold opacity-70">{msg.timestamp}</span>
                   {!isUser && (
                     <button
-                      onClick={() => speakText(msg.text, ttsEnabled, settings.language || 'es')}
+                      onClick={() => speakText(msg.text, ttsEnabled, language)}
                       className="p-1 hover:opacity-100 opacity-80"
-                      title="Repetir voz"
+                      title="TTS"
                     >
                       <Volume2 size={20} />
                     </button>
@@ -179,7 +183,7 @@ export const AIChatView: React.FC<Props> = ({
         {isLoading && (
           <div className="flex items-center gap-3 p-4 rounded-2xl bg-teal-50 border border-teal-300 text-teal-900 font-bold text-lg animate-pulse">
             <Sparkles size={24} className="animate-spin" />
-            <span>Guía Rita está escribiendo su respuesta...</span>
+            <span>{t.chatView.typing}</span>
           </div>
         )}
 
@@ -188,14 +192,9 @@ export const AIChatView: React.FC<Props> = ({
 
       {/* Quick Senior Prompts */}
       <div className="mb-4">
-        <p className="font-black text-base mb-2 opacity-80">Frases rápidas para tocar con un solo toque:</p>
+        <p className="font-black text-base mb-2 opacity-80">{t.chatView.quickPromptsLabel}</p>
         <div className="flex flex-wrap gap-2">
-          {[
-            'Hoy me dolieron las manos al abrir la mermelada',
-            'Me sentí un poco mareado esta mañana',
-            'Completé todos mis ejercicios de la agenda',
-            '¿Qué ejercicio me recomiendas para rigidez de dedos?'
-          ].map((promptText) => (
+          {(t.chatView.quickPrompts || []).map((promptText) => (
             <button
               key={promptText}
               onClick={() => handleQuickPrompt(promptText)}
@@ -223,10 +222,9 @@ export const AIChatView: React.FC<Props> = ({
                 ? 'bg-yellow-400 text-black border-yellow-300'
                 : 'bg-amber-500 text-white border-amber-700 hover:bg-amber-600'
           }`}
-          title="Hablarle a Rita por micrófono"
         >
           {isListening ? <MicOff size={28} /> : <Mic size={28} />}
-          <span>{isListening ? 'Escuchando...' : 'Hablar por Micrófono'}</span>
+          <span>{isListening ? t.chatView.listening : t.chatView.speakMic}</span>
         </button>
 
         {/* Text Input */}
@@ -236,7 +234,7 @@ export const AIChatView: React.FC<Props> = ({
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-            placeholder="Escribe o habla aquí tu mensaje..."
+            placeholder={t.chatView.placeholder}
             className={`flex-1 p-4 rounded-2xl border-2 text-xl font-bold ${
               highContrast ? 'bg-zinc-900 border-yellow-400 text-yellow-300' : 'bg-white border-slate-300 text-slate-800'
             }`}
@@ -252,7 +250,6 @@ export const AIChatView: React.FC<Props> = ({
                   ? 'bg-yellow-400 text-black border-yellow-300'
                   : 'bg-teal-600 text-white border-teal-800 hover:bg-teal-700'
             }`}
-            title="Enviar mensaje"
           >
             <Send size={28} />
           </button>
@@ -261,3 +258,4 @@ export const AIChatView: React.FC<Props> = ({
     </div>
   );
 };
+

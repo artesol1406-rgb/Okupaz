@@ -56,8 +56,34 @@ app.post("/api/chat", async (req, res) => {
       return res.json({ reply: fallbackText });
     }
 
-    const systemInstruction = `Eres 'Rita', una guía de Terapia Ocupacional empática, paciente, amable y muy clara, especializada en atender a adultos mayores.
-Idioma preferido del usuario: ${lang} (es = español, en = inglés, de = alemán). Responde SIEMPRE en este idioma.
+    let systemInstruction = "";
+    if (lang === 'de') {
+      systemInstruction = `Du bist 'Rita', eine empathische, geduldige und freundliche Ergotherapie-Assistentin für Senioren.
+WICHTIGE REGEL: Antworte AUSSCHLIESSLICH AUF DEUTSCH. Jedes Wort, jede Erklärung und jeder Satz muss auf Deutsch sein.
+Nutze kurze, verständliche Sätze, eine warme Sprache und Schritt-für-Schritt-Anleitungen.
+Deine Aufgaben:
+1. Fragen zu den Ergotherapie-Übungen (Hände, Koordination, Beweglichkeit, Dehnungen) beantworten.
+2. Dem Patienten einfühlsam zuhören (Schmerzen, Müdigkeit, Stimmung, Fortschritte).
+3. Symptome und Rückmeldungen freundlich notieren.
+4. Daran erinnern, dass bei stechenden Schmerzen oder Schwindel die Übung sofort gestoppt werden muss.
+
+Patientendaten:
+${JSON.stringify(patientContext || {}, null, 2)}`;
+    } else if (lang === 'en') {
+      systemInstruction = `You are 'Rita', an empathetic, patient, and friendly Occupational Therapy guide for seniors.
+CRITICAL RULE: Respond EXCLUSIVELY IN ENGLISH. Every sentence, explanation, and word must be in English.
+Use short, simple sentences, warm language, and step-by-step guidance.
+Your responsibilities:
+1. Answer questions about how to perform occupational therapy exercises (hands, coordination, mobility, stretching).
+2. Listen to how the patient feels (pain, fatigue, mood, daily progress).
+3. Kindly log symptoms and feedback reported for the therapist report.
+4. Always remind them that if they experience severe pain or dizziness, stop the exercise immediately.
+
+Patient details:
+${JSON.stringify(patientContext || {}, null, 2)}`;
+    } else {
+      systemInstruction = `Eres 'Rita', una guía de Terapia Ocupacional empática, paciente, amable y muy clara, especializada en atender a adultos mayores.
+REGLA CRÍTICA: Responde EXCLUSIVAMENTE EN ESPAÑOL. Cada frase, explicación y palabra debe ser en español.
 Usa frases cortas, lenguaje cálido y motivador, y explicaciones paso a paso.
 Tus responsabilidades:
 1. Responder preguntas sobre cómo hacer los ejercicios de terapia ocupacional (manos, coordinación, movilidad, estiramientos).
@@ -67,6 +93,7 @@ Tus responsabilidades:
 
 Datos del paciente actual:
 ${JSON.stringify(patientContext || {}, null, 2)}`;
+    }
 
     const contents = [];
     if (chatHistory && Array.isArray(chatHistory)) {
@@ -88,13 +115,25 @@ ${JSON.stringify(patientContext || {}, null, 2)}`;
       },
     });
 
-    const replyText = response.text || "Hola, no pude procesar el mensaje en este momento. Inténtalo de nuevo.";
+    const fallbackDefaultReply =
+      lang === 'de'
+        ? "Hallo, ich konnte die Nachricht im Moment nicht verarbeiten. Bitte versuchen Sie es erneut."
+        : lang === 'en'
+        ? "Hello, I could not process your message right now. Please try again."
+        : "Hola, no pude procesar el mensaje en este momento. Inténtalo de nuevo.";
+
+    const replyText = response.text || fallbackDefaultReply;
     res.json({ reply: replyText });
   } catch (error: any) {
     console.error("Error en /api/chat:", error);
-    res.json({
-      reply: "Hola, soy Rita. Estoy atenta a tus síntomas y comentarios. Recuerda realizar cada ejercicio despacio y sin dolor."
-    });
+    const lang = req.body?.language || 'es';
+    const errReply =
+      lang === 'de'
+        ? "Hallo, ich bin Rita. Bitte führen Sie jede Übung langsam und ohne Schmerzen durch."
+        : lang === 'en'
+        ? "Hello, I am Rita. Please perform each exercise slowly and pain-free."
+        : "Hola, soy Rita. Estoy atenta a tus síntomas y comentarios. Recuerda realizar cada ejercicio despacio y sin dolor.";
+    res.json({ reply: errReply });
   }
 });
 
@@ -190,35 +229,76 @@ ${chatNotes && chatNotes.length > 0 ? chatNotes.map((n: any) => `- "${n.text}"`)
       return res.json({ report: fallbackReport });
     }
 
-    const prompt = `Genera un Reporte Clínico de Terapia Ocupacional en idioma '${lang}' (es = español, en = inglés, de = alemán).
-Datos recibidos del paciente:
-- Nombre del Paciente: ${name}
+    let reportPrompt = "";
+    if (lang === 'de') {
+      reportPrompt = `Erstelle einen klinischen Ergotherapie-Bericht AUSSCHLIESSLICH AUF DEUTSCH.
+Patientendaten:
+- Name: ${name}
+- Alter: ${age} Jahre
+- Übungsprotokolle: ${JSON.stringify(exerciseLogs || [], null, 2)}
+- Zeitplan: ${JSON.stringify(schedule || [], null, 2)}
+- Kognitive Testergebnisse: ${JSON.stringify(testResults || [], null, 2)}
+- Chat-Notizen: ${JSON.stringify(chatNotes || [], null, 2)}
+
+Strukturiere den Bericht in klarem Markdown auf Deutsch mit Abschnitten zu Übungstreue, Mobilität/Schmerzen, Kognitionsbewertung, Patientenmerkungen und klinischen Empfehlungen.`;
+    } else if (lang === 'en') {
+      reportPrompt = `Generate a Clinical Occupational Therapy Report EXCLUSIVELY IN ENGLISH.
+Patient data:
+- Name: ${name}
+- Age: ${age} years
+- Exercise History: ${JSON.stringify(exerciseLogs || [], null, 2)}
+- Schedule: ${JSON.stringify(schedule || [], null, 2)}
+- Cognitive Test Results: ${JSON.stringify(testResults || [], null, 2)}
+- Chat/Notes Transcript: ${JSON.stringify(chatNotes || [], null, 2)}
+
+Structure the report in clean Markdown in English with sections for Therapy Adherence, Joint Mobility/Pain, Cognitive Evaluation, Patient Remarks, and Clinical Recommendations.`;
+    } else {
+      reportPrompt = `Genera un Reporte Clínico de Terapia Ocupacional EXCLUSIVAMENTE EN ESPAÑOL.
+Datos del paciente:
+- Nombre: ${name}
 - Edad: ${age} años
 - Historial de Ejercicios Cumplidos: ${JSON.stringify(exerciseLogs || [], null, 2)}
 - Agenda y Rutina: ${JSON.stringify(schedule || [], null, 2)}
 - Resultados del Test Cognitivo: ${JSON.stringify(testResults || [], null, 2)}
 - Transcripción/Notas del Chat: ${JSON.stringify(chatNotes || [], null, 2)}
 
-Estructura el informe en formato Markdown con títulos claros sobre Adherencia, Movilidad/Dolor, Evaluación Cognitiva, Observaciones y Recomendaciones Clínicas.`;
+Estructura el informe en formato Markdown en español con secciones sobre Adherencia, Movilidad/Dolor, Evaluación Cognitiva, Observaciones y Recomendaciones Clínicas.`;
+    }
 
     const response = await ai.models.generateContent({
       model: "gemini-3.6-flash",
-      contents: prompt,
+      contents: reportPrompt,
       config: {
         temperature: 0.3,
       },
     });
 
-    const reportMarkdown = response.text || "No se pudo generar el reporte en este momento.";
+    const fallbackReportDefault =
+      lang === 'de'
+        ? "Der Bericht konnte derzeit nicht erstellt werden."
+        : lang === 'en'
+        ? "The report could not be generated at this time."
+        : "No se pudo generar el reporte en este momento.";
+
+    const reportMarkdown = response.text || fallbackReportDefault;
     res.json({ report: reportMarkdown });
   } catch (error: any) {
     console.error("Error en /api/report:", error);
+    const lang = req.body?.language || 'es';
     const pName = req.body?.patientName || 'Rosa María González';
     const tests = req.body?.testResults || [];
     const scoreStr = tests.length > 0 ? `${tests[0].totalScore}/30` : 'Completado';
-    res.json({
-      report: `# INFORME CLÍNICO DE TERAPIA OCUPACIONAL\n**Paciente:** ${pName}\n\n- Adherencia a la rutina: Alta.\n- Evaluación de movilidad: Continuidad recomendada.\n- Test cognitivo: ${scoreStr}.`
-    });
+
+    let errReport = "";
+    if (lang === 'de') {
+      errReport = `# ERGOTHERAPIE-BERICHT\n**Patient/in:** ${pName}\n\n- Übungstreue: Hoch.\n- Mobilitätsbewertung: Fortführung empfohlen.\n- Kognitiver Test: ${scoreStr}.`;
+    } else if (lang === 'en') {
+      errReport = `# OCCUPATIONAL THERAPY REPORT\n**Patient:** ${pName}\n\n- Therapy Adherence: High.\n- Mobility Assessment: Continuation recommended.\n- Cognitive Test: ${scoreStr}.`;
+    } else {
+      errReport = `# INFORME CLÍNICO DE TERAPIA OCUPACIONAL\n**Paciente:** ${pName}\n\n- Adherencia a la rutina: Alta.\n- Evaluación de movilidad: Continuidad recomendada.\n- Test cognitivo: ${scoreStr}.`;
+    }
+
+    res.json({ report: errReport });
   }
 });
 

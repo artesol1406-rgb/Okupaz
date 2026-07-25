@@ -27,6 +27,29 @@ export const DuolingoPathView: React.FC<Props> = ({
     return logs.some((l) => l.exerciseId === exerciseId && l.completed);
   };
 
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    const fullName = settings.patientName || 'Rosa María';
+    const name = fullName.trim().split(' ')[0] || 'Rosa María';
+
+    if (language === 'de') {
+      if (hour >= 5 && hour < 12) return { text: `Guten Morgen, ${name}! ☀️`, sub: 'Bereit für Ihre heutigen Therapieschritte?' };
+      if (hour >= 12 && hour < 18) return { text: `Guten Tag, ${name}! 🌤️`, sub: 'Lassen Sie uns mit Ihrer Therapiemethode fortfahren.' };
+      return { text: `Guten Abend, ${name}! 🌙`, sub: 'Eine sanfte Routine vor der Abendruhe.' };
+    }
+    if (language === 'en') {
+      if (hour >= 5 && hour < 12) return { text: `Good morning, ${name}! ☀️`, sub: 'Ready for today’s therapy exercises?' };
+      if (hour >= 12 && hour < 18) return { text: `Good afternoon, ${name}! 🌤️`, sub: 'Let’s keep going with your daily mobility routine.' };
+      return { text: `Good evening, ${name}! 🌙`, sub: 'A gentle routine to relax your joints before resting.' };
+    }
+    // Spanish default
+    if (hour >= 5 && hour < 12) return { text: `¡Buenos días, ${name}! ☀️`, sub: '¿Listos para los ejercicios terapéuticos de hoy?' };
+    if (hour >= 12 && hour < 18) return { text: `¡Buenas tardes, ${name}! 🌤️`, sub: 'Sigamos avanzando con tu rutina de movilidad.' };
+    return { text: `¡Buenas noches, ${name}! 🌙`, sub: 'Una rutina suave para relajar tus articulaciones antes de descansar.' };
+  };
+
+  const greeting = getGreeting();
+
   return (
     <div className={`w-full max-w-4xl mx-auto p-4 md:p-6 rounded-3xl ${
       highContrast ? 'bg-black text-yellow-300' : 'bg-gradient-to-b from-emerald-50 via-teal-50 to-sky-50 text-slate-800'
@@ -40,14 +63,14 @@ export const DuolingoPathView: React.FC<Props> = ({
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-base font-black uppercase tracking-wide bg-green-600 text-white mb-3">
           <Sparkles size={20} /> {t.pathView.dailyRoutine}
         </div>
-        <h2 className="text-3xl md:text-4xl font-black mb-2">{t.pathView.welcomeSession}</h2>
+        <h2 className="text-3xl md:text-4xl font-black mb-2">{greeting.text}</h2>
         <p className="text-lg md:text-xl font-medium max-w-2xl mx-auto">
-          {t.pathView.welcomeSub}
+          {greeting.sub}
         </p>
 
         {/* Listen Button */}
         <button
-          onClick={() => speakText(t.pathView.listenIntro, ttsEnabled, language)}
+          onClick={() => speakText(`${greeting.text}. ${greeting.sub}`, ttsEnabled, language)}
           className={`mt-4 px-5 py-2.5 rounded-2xl font-black text-base inline-flex items-center gap-2 border-2 shadow-md transition ${
             highContrast ? 'bg-yellow-400 text-black border-yellow-300' : 'bg-green-100 text-green-900 border-green-300 hover:bg-green-200'
           }`}

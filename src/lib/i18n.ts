@@ -14,6 +14,13 @@ export const TRANSLATIONS = {
       chat: 'Guía Rita',
       report: 'Reporte Médico',
     },
+    tabAnnouncements: {
+      path: 'Ruta de ejercicios y rutina diaria',
+      schedule: 'Agenda y horario terapéutico',
+      dementia: 'Test de memoria y orientación cognitiva',
+      chat: 'Chat con la Guía Rita',
+      report: 'Reporte para el médico',
+    },
     voiceControl: {
       pause: 'Pausar Voz',
       resume: 'Continuar Voz',
@@ -26,6 +33,8 @@ export const TRANSLATIONS = {
       contrast: 'Contraste',
       contrastOn: 'Alto Contraste ON',
       language: 'Idioma',
+      resetAppBtn: 'Reiniciar App',
+      resetAppConfirm: '¿Deseas reiniciar la aplicación y volver a la selección de idioma y perfil?',
     },
     stats: {
       days: 'días',
@@ -89,6 +98,7 @@ export const TRANSLATIONS = {
       prevStep: 'Paso Anterior',
       close: 'Cerrar',
       speakInstruction: 'Escuchar Instrucción',
+      timerFinishedPrompt: '¡Tiempo completado! Por favor pasa al siguiente paso o finaliza el ejercicio.',
     },
     scheduleView: {
       title: 'Mi Agenda y Horario Terapéutico',
@@ -206,6 +216,13 @@ export const TRANSLATIONS = {
       chat: 'Guide Rita',
       report: 'Doctor Report',
     },
+    tabAnnouncements: {
+      path: 'Exercise path and daily routine',
+      schedule: 'Schedule and therapeutic agenda',
+      dementia: 'Memory and cognitive test',
+      chat: 'Chat with Guide Rita',
+      report: 'Report for the doctor',
+    },
     voiceControl: {
       pause: 'Pause Voice',
       resume: 'Resume Voice',
@@ -218,6 +235,8 @@ export const TRANSLATIONS = {
       contrast: 'Contrast',
       contrastOn: 'High Contrast ON',
       language: 'Language',
+      resetAppBtn: 'Restart App',
+      resetAppConfirm: 'Are you sure you want to restart the app and return to language and profile selection?',
     },
     stats: {
       days: 'days',
@@ -281,6 +300,7 @@ export const TRANSLATIONS = {
       prevStep: 'Previous Step',
       close: 'Close',
       speakInstruction: 'Listen Instruction',
+      timerFinishedPrompt: 'Time is up! Please move to the next step or finish the exercise.',
     },
     scheduleView: {
       title: 'My Daily Therapy Schedule',
@@ -398,6 +418,13 @@ export const TRANSLATIONS = {
       chat: 'Assistentin Rita',
       report: 'Arztbericht',
     },
+    tabAnnouncements: {
+      path: 'Übungspfad und Tagesroutine',
+      schedule: 'Zeitplan und Kalender',
+      dementia: 'Gedächtnis- und Orientierungstest',
+      chat: 'Chat mit Assistentin Rita',
+      report: 'Arztbericht',
+    },
     voiceControl: {
       pause: 'Sprache Pausieren',
       resume: 'Sprache Fortsetzen',
@@ -410,6 +437,8 @@ export const TRANSLATIONS = {
       contrast: 'Kontrast',
       contrastOn: 'Hoher Kontrast AN',
       language: 'Sprache',
+      resetAppBtn: 'App Neustarten',
+      resetAppConfirm: 'Möchten Sie die App wirklich neustarten und zur Sprach- und Profilauswahl zurückkehren?',
     },
     stats: {
       days: 'Tage',
@@ -473,6 +502,7 @@ export const TRANSLATIONS = {
       prevStep: 'Vorheriger Schritt',
       close: 'Schließen',
       speakInstruction: 'Anleitung Anhören',
+      timerFinishedPrompt: 'Zeit abgelaufen! Bitte fahren Sie mit dem nächsten Schritt fort oder beenden Sie die Übung.',
     },
     scheduleView: {
       title: 'Mein Täglicher Therapie-Zeitplan',

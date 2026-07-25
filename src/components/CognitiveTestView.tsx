@@ -12,9 +12,10 @@ import {
   Apple,
   Armchair,
   Coins,
-  Clock
+  Clock,
+  Square
 } from 'lucide-react';
-import { speakText } from '../lib/tts';
+import { speakText, stopSpeaking } from '../lib/tts';
 
 interface Props {
   onSaveTestResult: (result: DementiaTestResult) => void;
@@ -152,14 +153,24 @@ export const CognitiveTestView: React.FC<Props> = ({
           {t.cognitiveView.desc}
         </p>
 
-        <button
-          onClick={speakCurrentQuestion}
-          className={`mt-4 px-5 py-2.5 rounded-2xl font-black text-base inline-flex items-center gap-2 border-2 shadow-md transition ${
-            highContrast ? 'bg-yellow-400 text-black border-yellow-300' : 'bg-purple-100 text-purple-900 border-purple-300 hover:bg-purple-200'
-          }`}
-        >
-          <Volume2 size={24} /> {t.cognitiveView.listenQuestionBtn}
-        </button>
+        <div className="mt-4 flex items-center justify-center gap-3">
+          <button
+            onClick={speakCurrentQuestion}
+            className={`px-5 py-2.5 rounded-2xl font-black text-base inline-flex items-center gap-2 border-2 shadow-md transition ${
+              highContrast ? 'bg-yellow-400 text-black border-yellow-300' : 'bg-purple-100 text-purple-900 border-purple-300 hover:bg-purple-200'
+            }`}
+          >
+            <Volume2 size={24} /> {t.cognitiveView.listenQuestionBtn}
+          </button>
+
+          <button
+            onClick={stopSpeaking}
+            className="px-5 py-2.5 rounded-2xl font-black text-base inline-flex items-center gap-2 bg-rose-600 text-white hover:bg-rose-700 shadow-md transition border-2 border-rose-300"
+            title="Detener Voz"
+          >
+            <Square size={20} className="fill-current" /> {t.voiceControl.stop}
+          </button>
+        </div>
       </div>
 
       {!isTestFinished ? (

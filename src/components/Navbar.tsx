@@ -16,7 +16,8 @@ import {
   Pause,
   Play,
   Square,
-  UserCog
+  UserCog,
+  RotateCcw
 } from 'lucide-react';
 import { UserSettings } from '../types';
 import { getTranslation, Language } from '../lib/i18n';
@@ -27,12 +28,15 @@ import {
   stopSpeaking
 } from '../lib/tts';
 
+import { ECGLandscapeLogoIcon } from './ECGLandscapeLogoIcon';
+
 interface Props {
   activeTab: 'path' | 'schedule' | 'dementia' | 'chat' | 'report';
   setActiveTab: (tab: 'path' | 'schedule' | 'dementia' | 'chat' | 'report') => void;
   settings: UserSettings;
   updateSettings: (newSettings: Partial<UserSettings>) => void;
   onOpenOnboarding?: () => void;
+  onResetApp?: () => void;
 }
 
 export const Navbar: React.FC<Props> = ({
@@ -41,6 +45,7 @@ export const Navbar: React.FC<Props> = ({
   settings,
   updateSettings,
   onOpenOnboarding,
+  onResetApp,
 }) => {
   const { highContrast, ttsEnabled, currentStreak, totalXp, hearts, fontSize, language = 'es', patientName } = settings;
   const t = getTranslation(language);
@@ -122,11 +127,14 @@ export const Navbar: React.FC<Props> = ({
       <div className="max-w-7xl mx-auto px-4 py-2.5 flex flex-wrap items-center justify-between gap-3">
         {/* Brand Name & Patient Badge */}
         <div className="flex items-center gap-3">
-          <div className={`p-2.5 rounded-2xl flex items-center justify-center font-black ${
-            highContrast ? 'bg-yellow-400 text-black' : 'bg-green-600 text-white'
-          }`}>
-            <Activity size={32} />
-          </div>
+          <button
+            type="button"
+            onClick={onOpenOnboarding}
+            className="group cursor-pointer transition transform hover:scale-105 active:scale-95"
+            title="Ver animación de Intro y Perfil"
+          >
+            <ECGLandscapeLogoIcon size={46} />
+          </button>
           <div>
             <h1 className="font-black text-2xl md:text-3xl tracking-tight leading-none flex items-center gap-2">
               <span>{t.brandName}</span>
@@ -189,6 +197,22 @@ export const Navbar: React.FC<Props> = ({
             <Globe size={20} />
             <span className="uppercase font-black">{language === 'es' ? '🇪🇸 ES' : language === 'en' ? '🇬🇧 EN' : '🇩🇪 DE'}</span>
           </button>
+
+          {/* Reset/Restart App Button */}
+          {onResetApp && (
+            <button
+              onClick={onResetApp}
+              className={`p-2 rounded-xl font-black text-sm flex items-center gap-1 border-2 transition ${
+                highContrast
+                  ? 'bg-red-500 text-white border-red-400'
+                  : 'bg-rose-100 text-rose-800 border-rose-300 hover:bg-rose-200'
+              }`}
+              title={t.accessibility.resetAppBtn}
+            >
+              <RotateCcw size={18} />
+              <span className="hidden lg:inline text-xs">{t.accessibility.resetAppBtn}</span>
+            </button>
+          )}
 
           {/* High Contrast Button */}
           <button
