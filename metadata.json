@@ -1,0 +1,6 @@
+{
+  "name": "Terapia Ocupacional Senior",
+  "description": "App tipo Duolingo de terapia ocupacional para adultos mayores, con botones grandes, guías visuales, agenda de ejercicios, test de demencia/cognitivo, chat con IA y reporte para médicos.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
