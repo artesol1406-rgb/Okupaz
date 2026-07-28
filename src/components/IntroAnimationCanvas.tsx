@@ -38,7 +38,8 @@ export const IntroAnimationCanvas: React.FC<IntroAnimationCanvasProps> = ({
         ? 'Welcome to OcuPaz Senior. Occupational therapy and wellness for your health.'
         : 'Te damos la bienvenida a OcuPaz Senior. Terapia ocupacional y bienestar para tu salud.';
     
-    speakText(introSpeech, ttsEnabled, language);
+    const safeLang: 'es' | 'en' | 'de' = language === 'de' ? 'de' : language === 'en' ? 'en' : 'es';
+    speakText(introSpeech, ttsEnabled, safeLang);
 
     // ECG wave calculation helper (P-Q-R-S-T wave pattern)
     const getEcgVal = (t: number) => {
@@ -92,17 +93,23 @@ export const IntroAnimationCanvas: React.FC<IntroAnimationCanvasProps> = ({
         const mandalaNorm = elapsed / mandalaDuration;
 
         const numSpokes = 8;
-        const maxRadius = Math.min(width, height) * 0.38 * Math.min(1, mandalaNorm * 1.3);
+        const maxRadius = Math.max(0, Math.min(width, height) * 0.38 * Math.min(1, mandalaNorm * 1.3));
         const rotationAngle = (elapsed / 1000) * 0.4;
 
         // Draw ambient expanding pulse rings
-        for (let rRing = 1; rRing <= 3; rRing++) {
-          const ringR = (maxRadius * (rRing / 3) + ((elapsed * 0.05) % 40)) % maxRadius;
-          ctx.beginPath();
-          ctx.arc(centerX, centerY, ringR, 0, Math.PI * 2);
-          ctx.strokeStyle = `rgba(16, 185, 129, ${0.15 * (1 - ringR / maxRadius)})`;
-          ctx.lineWidth = 1.5;
-          ctx.stroke();
+        if (maxRadius > 1) {
+          for (let rRing = 1; rRing <= 3; rRing++) {
+            const rawRingR = (maxRadius * (rRing / 3) + ((elapsed * 0.05) % 40)) % maxRadius;
+            const ringR = Math.max(0, Number.isFinite(rawRingR) ? rawRingR : 0);
+            if (ringR > 0) {
+              ctx.beginPath();
+              ctx.arc(centerX, centerY, ringR, 0, Math.PI * 2);
+              const alpha = Math.max(0, Math.min(1, 0.15 * (1 - ringR / maxRadius)));
+              ctx.strokeStyle = `rgba(16, 185, 129, ${alpha})`;
+              ctx.lineWidth = 1.5;
+              ctx.stroke();
+            }
+          }
         }
 
         // Draw Radial ECG Mandala Spokes
@@ -175,16 +182,17 @@ export const IntroAnimationCanvas: React.FC<IntroAnimationCanvasProps> = ({
 
         // Draw Rising Golden Sun behind Mountains
         const sunY = centerY + 30 - transitionEase * 70;
-        const sunRadius = 45 + transitionEase * 10;
+        const sunRadius = Math.max(1, 45 + transitionEase * 10);
+        const sunGlowRadius = Math.max(sunRadius + 1, sunRadius * 2.5);
 
         // Sun Glow
-        const sunGrad = ctx.createRadialGradient(centerX, sunY, 5, centerX, sunY, sunRadius * 2.5);
+        const sunGrad = ctx.createRadialGradient(centerX, sunY, 5, centerX, sunY, sunGlowRadius);
         sunGrad.addColorStop(0, 'rgba(251, 191, 36, 0.9)');
         sunGrad.addColorStop(0.4, 'rgba(245, 158, 11, 0.5)');
         sunGrad.addColorStop(1, 'rgba(245, 158, 11, 0)');
         ctx.fillStyle = sunGrad;
         ctx.beginPath();
-        ctx.arc(centerX, sunY, sunRadius * 2.5, 0, Math.PI * 2);
+        ctx.arc(centerX, sunY, sunGlowRadius, 0, Math.PI * 2);
         ctx.fill();
 
         // Sun Disk
